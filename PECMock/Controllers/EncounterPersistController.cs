@@ -61,7 +61,7 @@ namespace PECMock.Controllers
 
 
         [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
-        public async Task<string> CreateNew([FromBody]Dictionary<string, object> encounter)
+        public async Task<HttpResponseMessage> CreateNew([FromBody]Dictionary<string, object> encounter)
         {
             try
             {
@@ -109,11 +109,11 @@ namespace PECMock.Controllers
                 var modifyresponse = JsonConvert.DeserializeObject<JObject>(jsonString);
                 if (((bool?) modifyresponse["success"]) != true) throw new InvalidOperationException((string)modifyresponse["error"]);
 
-                return "success";
+                return Request.CreateResponse(HttpStatusCode.OK, "success");
             }
             catch (Exception e)
             {
-                return e.Message;
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, e.Message);
             }
         }
 
