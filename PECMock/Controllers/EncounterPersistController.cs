@@ -59,18 +59,38 @@ namespace PECMock.Controllers
             return File.ReadAllText("apikey.txt").Trim();
         }
 
+        private static void ValidateObject(Dictionary<string, object> obj)
+        {
+            if (obj.ContainsKey("KdId")) throw new ArgumentException("Cannot contain KdId");
+            if (obj.ContainsKey("UserId")) throw new ArgumentException("UserId should come from session");
+            if (obj.ContainsKey("PharmacyId")) throw new ArgumentException("PharmacyId should come from session");
+
+            if (!obj.ContainsKey("PatientId")) throw new ArgumentException("Missing PatientId");
+            if (!obj.ContainsKey("EncounterId")) throw new ArgumentException("Missing EncounterId");
+        }
+
+        private static async Task<List<JObject>> QueryEncounter(KdClient client, string pharmacyId, string patientId, string encounterId)
+        {
+            KdQuery query = KdQuery.Search(PwEntity.PwEncounter)
+                .FilterGroup()
+                .And(PwEntity.PwEncounter, "PharmacyId", "String", KdRequestOperator.Eq, pharmacyId)
+                .And(PwEntity.PwEncounter, "PatientId", "String", KdRequestOperator.Eq, patientId)
+                .And(PwEntity.PwEncounter, "EncounterId", "String", KdRequestOperator.Eq, encounterId);
+            // obtains result
+            var result = await client.Request2Objects<JObject>(query);
+
+            // throw error if not success status
+            if (!result.IsSuccessStatusCode) throw new InvalidOperationException("Cannot query API");
+            return result.Entities;
+        }
+
 
         [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
         public async Task<HttpResponseMessage> CreateNew([FromBody]Dictionary<string, object> encounter)
         {
             try
             {
-                if (encounter.ContainsKey("KdId")) throw new ArgumentException("Cannot contain KdId");
-                if (encounter.ContainsKey("UserId")) throw new ArgumentException("UserId should come from session");
-                if (encounter.ContainsKey("PharmacyId")) throw new ArgumentException("PharmacyId should come from session");
-
-                if (!encounter.ContainsKey("PatientId")) throw new ArgumentException("Missing PatientId");
-                if (!encounter.ContainsKey("EncounterId")) throw new ArgumentException("Missing EncounterId");
+                ValidateObject(encounter);
                 string patientId = ((string)encounter["PatientId"]).Trim();
                 string encounterId = ((string)encounter["EncounterId"]).Trim();
                 if (string.IsNullOrEmpty(patientId)) throw new ArgumentException("PatientId cannot be empty");
@@ -79,18 +99,9 @@ namespace PECMock.Controllers
                 string apikey = (string)Config.Read("apikey")["apikey"];
                 KdClient client = KdClient.ApiClient(apikey, apiurl);
 
-                KdQuery query = KdQuery.Search(PwEntity.PwEncounter)
-                    .FilterGroup()
-                    .And(PwEntity.PwEncounter, "PharmacyId", "String", KdRequestOperator.Eq, PharmacyId)
-                    .And(PwEntity.PwEncounter, "PatientId", "String", KdRequestOperator.Eq, patientId)
-                    .And(PwEntity.PwEncounter, "EncounterId", "String", KdRequestOperator.Eq, encounterId);
-                // obtains result
-                var result = await client.Request2Objects<JObject>(query);
-
-                // throw error if not success status
-                if (!result.IsSuccessStatusCode) throw new InvalidOperationException("Cannot query API");
-                // if encounter already exists, throw error
-                if (result.Count > 0) throw new InvalidOperationException("Encounter already exists");
+                // make sure no encounter exists
+                List<JObject> encounters = await QueryEncounter(client, PharmacyId, patientId, encounterId);
+                if (encounters.Count > 0) throw new InvalidOperationException("Encounter already exists");
 
                 // otherwise proceed to save
                 encounter["PharmacyId"] = PharmacyId;
@@ -116,6 +127,5 @@ namespace PECMock.Controllers
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, e.Message);
             }
         }
-
     }
 }
