@@ -17,6 +17,13 @@ using PECMock.Utility;
 
 namespace PECMock.Controllers
 {
+    public class EncounterUpdateBody
+    {
+        public string PatientId { get; set; }
+        public string EncounterId { get; set; }
+        public List<KdModify> Modifies { get; set; }
+    }
+
     public class EncounterPersistController : ApiController
     {
         // these values should be from PEC session, but we hard code them
@@ -119,6 +126,66 @@ namespace PECMock.Controllers
                 var jsonString = Encoding.UTF8.GetString(await modifyResult.Content.ReadAsByteArrayAsync());
                 var modifyresponse = JsonConvert.DeserializeObject<JObject>(jsonString);
                 if (((bool?) modifyresponse["success"]) != true) throw new InvalidOperationException((string)modifyresponse["error"]);
+
+                return Request.CreateResponse(HttpStatusCode.OK, "success");
+            }
+            catch (Exception e)
+            {
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, e.Message);
+            }
+        }
+
+
+        [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
+        public async Task<HttpResponseMessage> Update([FromBody]EncounterUpdateBody body)
+        {
+            try
+            {
+                var allowedEntities = new string[] { "PwEncounter", "PwEncounterAllergy", "PwEncounterEducation", "PwEncounterGoal", "PwEncounterIntervention", "PwEncounterMed", "PwEncounterMedMTP", "PwEncounterMedRec", "PwEncounterSocial" };
+                if (string.IsNullOrEmpty(body.PatientId)) throw new ArgumentException("PatientId cannot be empty");
+                if (string.IsNullOrEmpty(body.EncounterId)) throw new ArgumentException("EncounterId cannot be empty");
+
+                string apikey = (string)Config.Read("apikey")["apikey"];
+                KdClient client = KdClient.ApiClient(apikey, apiurl);
+
+                // check to ensure encounter is updatable
+                List<JObject> encounters = await QueryEncounter(client, PharmacyId, body.PatientId, body.EncounterId);
+                if (encounters.Count != 1) throw new InvalidOperationException("Did not find the encounter to modify. It may not exist or too many encounters may qualify for this search.");
+                var encounterStatus = (string) encounters[0]["Status"];
+                if (encounterStatus != "In Progress" && encounterStatus != "Completed") throw new InvalidOperationException("Cannot modify an encounter that is not in progress or completed");
+
+                // prepare each object for updating
+                foreach (var modify in body.Modifies)
+                {
+                    // check if entity is allowed
+                    if (!allowedEntities.Contains(modify.Entity)) throw new InvalidOperationException("Entity not allowed: " + modify.Entity);
+
+                    // perform checks and enforce certain values
+                    modify.Values["PatientId"] = body.PatientId;
+                    modify.Values["EncounterId"] = body.EncounterId;
+                    ValidateObject(modify.Values);
+                    modify.Values["PharmacyId"] = PharmacyId;
+                    modify.Values["UserId"] = UserId;
+
+                    //
+                    switch (modify.Entity)
+                    {
+                        case "PwEncounter":
+                            if (modify.Operation != "Update") throw new InvalidOperationException("Can only update PwEncounter");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                // call modify api
+                var modifyResult = await client.Request(body.Modifies);
+
+                // if not success status, throw
+                if (!modifyResult.IsSuccessStatusCode) throw new InvalidOperationException("Modify API failed");
+                var jsonString = Encoding.UTF8.GetString(await modifyResult.Content.ReadAsByteArrayAsync());
+                var modifyresponse = JsonConvert.DeserializeObject<JObject>(jsonString);
+                if (((bool?)modifyresponse["success"]) != true) throw new InvalidOperationException((string)modifyresponse["error"]);
 
                 return Request.CreateResponse(HttpStatusCode.OK, "success");
             }
