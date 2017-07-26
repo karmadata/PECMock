@@ -33,32 +33,6 @@ namespace PECMock.Controllers
         // api key and such
         private const string apiurl = "https://qa-api.karmadata.com/";
 
-        //// GET: api/EncounterPersist
-        //public IEnumerable<string> Get()
-        //{
-        //    return new string[] { "value1", "value2" };
-        //}
-
-        //// GET: api/EncounterPersist/5
-        //public HttpResponseMessage Get(int id)
-        //{
-        //    return Request.CreateResponse(HttpStatusCode.OK, "Value");
-        //}
-
-        // POST: api/EncounterPersist
-        public void Post([FromBody]string value)
-        {
-        }
-
-        // PUT: api/EncounterPersist/5
-        public void Put(int id, [FromBody]string value)
-        {
-        }
-
-        // DELETE: api/EncounterPersist/5
-        public void Delete(int id)
-        {
-        }
 
 
         private static string GetApiKey()
@@ -74,14 +48,18 @@ namespace PECMock.Controllers
             if (body.EncounterId.Trim() != body.EncounterId) throw new ArgumentException("EncounterId has blank space");
         }
 
-        private static void ValidateObject(Dictionary<string, object> obj)
+        private static void ValidateModify(KdModify modify)
         {
-            if (obj.ContainsKey("KdId")) throw new ArgumentException("Cannot contain KdId");
-            if (obj.ContainsKey("UserId")) throw new ArgumentException("UserId should come from session");
-            if (obj.ContainsKey("PharmacyId")) throw new ArgumentException("PharmacyId should come from session");
+            if (string.IsNullOrEmpty(modify.Entity)) throw new ArgumentException("Missing Entity");
+            if (string.IsNullOrEmpty(modify.Operation)) throw new ArgumentException("Missing Operation");
+            if (modify.Values == null) throw new ArgumentException("Missing Values");
 
-            if (obj.ContainsKey("PatientId")) throw new ArgumentException("PatientId should not be included in each KdModify");
-            if (obj.ContainsKey("EncounterId")) throw new ArgumentException("EncounterId should not be included in each KdModify");
+            if (modify.Values.ContainsKey("KdId")) throw new ArgumentException("Cannot contain KdId");
+            if (modify.Values.ContainsKey("UserId")) throw new ArgumentException("UserId should come from session");
+            if (modify.Values.ContainsKey("PharmacyId")) throw new ArgumentException("PharmacyId should come from session");
+
+            if (modify.Values.ContainsKey("PatientId")) throw new ArgumentException("PatientId should not be included in each KdModify");
+            if (modify.Values.ContainsKey("EncounterId")) throw new ArgumentException("EncounterId should not be included in each KdModify");
         }
 
         private static async Task<List<JObject>> QueryEncounter(KdClient client, string pharmacyId, string patientId, string encounterId)
@@ -98,6 +76,7 @@ namespace PECMock.Controllers
             if (!result.IsSuccessStatusCode) throw new InvalidOperationException("Cannot query API");
             return result.Entities;
         }
+
 
 
         [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
@@ -129,7 +108,7 @@ namespace PECMock.Controllers
                 var modifyResult = await client.Request(new List<KdModify>() {modify});
 
                 // if not success status, throw
-                if (!modifyResult.IsSuccessStatusCode) throw new InvalidOperationException("Modify API failed");
+                if (!modifyResult.IsSuccessStatusCode) throw new InvalidOperationException(Encoding.UTF8.GetString(await modifyResult.Content.ReadAsByteArrayAsync()));
                 var jsonString = Encoding.UTF8.GetString(await modifyResult.Content.ReadAsByteArrayAsync());
                 var modifyresponse = JsonConvert.DeserializeObject<JObject>(jsonString);
                 if (((bool?) modifyresponse["success"]) != true) throw new InvalidOperationException((string)modifyresponse["error"]);
@@ -167,7 +146,7 @@ namespace PECMock.Controllers
                     if (!allowedEntities.Contains(modify.Entity)) throw new InvalidOperationException("Entity not allowed: " + modify.Entity);
 
                     // perform checks and enforce certain values
-                    ValidateObject(modify.Values);
+                    ValidateModify(modify);
                     modify.Values["PharmacyId"] = PharmacyId;
                     modify.Values["UserId"] = UserId;
                     modify.Values["PatientId"] = body.PatientId;
@@ -188,7 +167,7 @@ namespace PECMock.Controllers
                 var modifyResult = await client.Request(body.Modifies);
 
                 // if not success status, throw
-                if (!modifyResult.IsSuccessStatusCode) throw new InvalidOperationException("Modify API failed");
+                if (!modifyResult.IsSuccessStatusCode) throw new InvalidOperationException(Encoding.UTF8.GetString(await modifyResult.Content.ReadAsByteArrayAsync()));
                 var jsonString = Encoding.UTF8.GetString(await modifyResult.Content.ReadAsByteArrayAsync());
                 var modifyresponse = JsonConvert.DeserializeObject<JObject>(jsonString);
                 if (((bool?)modifyresponse["success"]) != true) throw new InvalidOperationException((string)modifyresponse["error"]);
