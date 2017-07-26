@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Web.Http;
 using System.IO;
 using System.Threading.Tasks;
+using System.Configuration;
 using KarmaData.Api.Models;
 using KarmaData.Api.Models.Base.Request;
 using KarmaData.Api.Models.PW;
@@ -86,7 +87,7 @@ namespace PECMock.Controllers
             {
                 ValidateBody(body);
 
-                string apikey = (string)Config.Read("apikey")["apikey"];
+                string apikey = ConfigurationManager.AppSettings["ApiKey"];
                 KdClient client = KdClient.ApiClient(apikey, apiurl);
 
                 // make sure no encounter exists
@@ -130,7 +131,7 @@ namespace PECMock.Controllers
                 var allowedEntities = new string[] { "PwEncounter", "PwEncounterAllergy", "PwEncounterEducation", "PwEncounterGoal", "PwEncounterIntervention", "PwEncounterMed", "PwEncounterMedMTP", "PwEncounterMedRec", "PwEncounterSocial" };
                 ValidateBody(body);
 
-                string apikey = (string)Config.Read("apikey")["apikey"];
+                string apikey = ConfigurationManager.AppSettings["ApiKey"];
                 KdClient client = KdClient.ApiClient(apikey, apiurl);
 
                 // check to ensure encounter is updatable
