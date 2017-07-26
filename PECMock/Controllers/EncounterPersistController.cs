@@ -66,14 +66,22 @@ namespace PECMock.Controllers
             return File.ReadAllText("apikey.txt").Trim();
         }
 
+        private static void ValidateBody(EncounterUpdateBody body)
+        {
+            if (string.IsNullOrEmpty(body.PatientId)) throw new ArgumentException("PatientId is empty");
+            if (string.IsNullOrEmpty(body.EncounterId)) throw new ArgumentException("EncounterId is empty");
+            if (body.PatientId.Trim() != body.PatientId) throw new ArgumentException("PatientId has blank space");
+            if (body.EncounterId.Trim() != body.EncounterId) throw new ArgumentException("EncounterId has blank space");
+        }
+
         private static void ValidateObject(Dictionary<string, object> obj)
         {
             if (obj.ContainsKey("KdId")) throw new ArgumentException("Cannot contain KdId");
             if (obj.ContainsKey("UserId")) throw new ArgumentException("UserId should come from session");
             if (obj.ContainsKey("PharmacyId")) throw new ArgumentException("PharmacyId should come from session");
 
-            if (!obj.ContainsKey("PatientId")) throw new ArgumentException("Missing PatientId");
-            if (!obj.ContainsKey("EncounterId")) throw new ArgumentException("Missing EncounterId");
+            if (obj.ContainsKey("PatientId")) throw new ArgumentException("PatientId should not be included in each KdModify");
+            if (obj.ContainsKey("EncounterId")) throw new ArgumentException("EncounterId should not be included in each KdModify");
         }
 
         private static async Task<List<JObject>> QueryEncounter(KdClient client, string pharmacyId, string patientId, string encounterId)
@@ -93,26 +101,25 @@ namespace PECMock.Controllers
 
 
         [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
-        public async Task<HttpResponseMessage> CreateNew([FromBody]Dictionary<string, object> encounter)
+        public async Task<HttpResponseMessage> CreateNew([FromBody]EncounterUpdateBody body)
         {
             try
             {
-                ValidateObject(encounter);
-                string patientId = ((string)encounter["PatientId"]).Trim();
-                string encounterId = ((string)encounter["EncounterId"]).Trim();
-                if (string.IsNullOrEmpty(patientId)) throw new ArgumentException("PatientId cannot be empty");
-                if (string.IsNullOrEmpty(encounterId)) throw new ArgumentException("EncounterId cannot be empty");
+                ValidateBody(body);
 
                 string apikey = (string)Config.Read("apikey")["apikey"];
                 KdClient client = KdClient.ApiClient(apikey, apiurl);
 
                 // make sure no encounter exists
-                List<JObject> encounters = await QueryEncounter(client, PharmacyId, patientId, encounterId);
+                List<JObject> encounters = await QueryEncounter(client, PharmacyId, body.PatientId, body.EncounterId);
                 if (encounters.Count > 0) throw new InvalidOperationException("Encounter already exists");
 
                 // otherwise proceed to save
+                var encounter = new Dictionary<string, object>();
                 encounter["PharmacyId"] = PharmacyId;
                 encounter["UserId"] = UserId;
+                encounter["PatientId"] = body.PatientId;
+                encounter["EncounterId"] = body.EncounterId;
                 var modify = new KdModify()
                 {
                     Operation = "Insert",
@@ -142,8 +149,7 @@ namespace PECMock.Controllers
             try
             {
                 var allowedEntities = new string[] { "PwEncounter", "PwEncounterAllergy", "PwEncounterEducation", "PwEncounterGoal", "PwEncounterIntervention", "PwEncounterMed", "PwEncounterMedMTP", "PwEncounterMedRec", "PwEncounterSocial" };
-                if (string.IsNullOrEmpty(body.PatientId)) throw new ArgumentException("PatientId cannot be empty");
-                if (string.IsNullOrEmpty(body.EncounterId)) throw new ArgumentException("EncounterId cannot be empty");
+                ValidateBody(body);
 
                 string apikey = (string)Config.Read("apikey")["apikey"];
                 KdClient client = KdClient.ApiClient(apikey, apiurl);
@@ -161,11 +167,11 @@ namespace PECMock.Controllers
                     if (!allowedEntities.Contains(modify.Entity)) throw new InvalidOperationException("Entity not allowed: " + modify.Entity);
 
                     // perform checks and enforce certain values
-                    modify.Values["PatientId"] = body.PatientId;
-                    modify.Values["EncounterId"] = body.EncounterId;
                     ValidateObject(modify.Values);
                     modify.Values["PharmacyId"] = PharmacyId;
                     modify.Values["UserId"] = UserId;
+                    modify.Values["PatientId"] = body.PatientId;
+                    modify.Values["EncounterId"] = body.EncounterId;
 
                     //
                     switch (modify.Entity)
