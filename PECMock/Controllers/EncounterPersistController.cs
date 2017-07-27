@@ -180,5 +180,48 @@ namespace PECMock.Controllers
                 return Request.CreateResponse(HttpStatusCode.InternalServerError, e.Message);
             }
         }
+
+
+        [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
+        public async Task<HttpResponseMessage> Delete([FromBody]EncounterUpdateBody body)
+        {
+            try
+            {
+                ValidateBody(body);
+
+                string apikey = ConfigurationManager.AppSettings["ApiKey"];
+                KdClient client = KdClient.ApiClient(apikey, apiurl);
+
+                // make sure encounter exists
+                List<JObject> encounters = await QueryEncounter(client, PharmacyId, body.PatientId, body.EncounterId);
+                if (encounters.Count == 0) throw new InvalidOperationException("Encounter does not exist");
+
+                // otherwise proceed to save
+                var encounter = new Dictionary<string, object>();
+                encounter["PharmacyId"] = PharmacyId;
+                encounter["UserId"] = UserId;
+                encounter["PatientId"] = body.PatientId;
+                encounter["EncounterId"] = body.EncounterId;
+                var modify = new KdModify()
+                {
+                    Operation = "Delete",
+                    Entity = "PwEncounter",
+                    Values = encounter
+                };
+                var modifyResult = await client.Request(new List<KdModify>() { modify });
+
+                // if not success status, throw
+                if (!modifyResult.IsSuccessStatusCode) throw new InvalidOperationException(Encoding.UTF8.GetString(await modifyResult.Content.ReadAsByteArrayAsync()));
+                var jsonString = Encoding.UTF8.GetString(await modifyResult.Content.ReadAsByteArrayAsync());
+                var modifyresponse = JsonConvert.DeserializeObject<JObject>(jsonString);
+                if (((bool?)modifyresponse["success"]) != true) throw new InvalidOperationException((string)modifyresponse["error"]);
+
+                return Request.CreateResponse(HttpStatusCode.OK, "success");
+            }
+            catch (Exception e)
+            {
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, e.Message);
+            }
+        }
     }
 }
