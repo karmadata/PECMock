@@ -45,11 +45,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="KarmaData.Api.Models, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\KarmaData.Api.Models.1.1.178\lib\net45\KarmaData.Api.Models.dll</HintPath>
+      <HintPath>..\packages\KarmaData.Api.Models.1.1.181\lib\net45\KarmaData.Api.Models.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="KarmaData.Api.Models.PW, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\KarmaData.Api.Models.PW.1.1.137\lib\net45\KarmaData.Api.Models.PW.dll</HintPath>
+      <HintPath>..\packages\KarmaData.Api.Models.PW.1.1.140\lib\net45\KarmaData.Api.Models.PW.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="KarmaData.Util.Client, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">

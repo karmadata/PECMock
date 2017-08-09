@@ -128,7 +128,7 @@ namespace PECMock.Controllers
         {
             try
             {
-                var allowedEntities = new string[] { "PwEncounter", "PwEncounterAllergy", "PwEncounterEducation", "PwEncounterGoal", "PwEncounterIntervention", "PwEncounterMed", "PwEncounterMedMTP", "PwEncounterMedRec", "PwEncounterSocial" };
+                var allowedEntities = new string[] { "PwEncounter", "PwEncounterAllergy", "PwEncounterCoordination", "PwEncounterEducation", "PwEncounterGoal", "PwEncounterIntervention", "PwEncounterMed", "PwEncounterMedMTP", "PwEncounterMedRec", "PwEncounterReferral", "PwEncounterSocial" };
                 ValidateBody(body);
 
                 string apikey = ConfigurationManager.AppSettings["ApiKey"];
