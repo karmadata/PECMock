@@ -42,12 +42,12 @@ namespace PECMock.Controllers
 
 
         [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
-        public async Task<HttpResponseMessage> Add([FromBody]KdModify modify)
+        public async Task<HttpResponseMessage> Save([FromBody]KdModify modify)
         {
             try
             {
                 if (modify.Entity != "PwPatientMedicarePlan") throw new ArgumentException("Entity must be PwPatientMedicarePlan");
-                if (modify.Operation != "Insert") throw new ArgumentException("Operation must be Insert");
+                // if (modify.Operation != "Insert") throw new ArgumentException("Operation must be Insert");
                 if (!modify.Values.ContainsKey("PatientId")) throw new ArgumentException("PatientId is empty");
                 if (modify.Values.ContainsKey("KdId")) throw new ArgumentException("Cannot contain KdId");
                 if (modify.Values.ContainsKey("UserId")) throw new ArgumentException("UserId should come from session");
