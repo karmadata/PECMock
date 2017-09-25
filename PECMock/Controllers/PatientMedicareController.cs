@@ -27,19 +27,6 @@ namespace PECMock.Controllers
         // api key and such
         private const string apiurl = "https://qa-api.karmadata.com/";
 
-        private static async Task<List<JObject>> QueryPayerPlan(KdClient client, string payerid)
-        {
-            KdQuery query = KdQuery.Search(PwEntity.PwPayerPlan)
-                .FilterGroup()
-                .And(PwEntity.PwPayerPlan, "KdId", "String", KdRequestOperator.Eq, payerid);
-            // obtains result
-            var result = await client.Request2Objects<JObject>(query);
-
-            // throw error if not success status
-            if (!result.IsSuccessStatusCode) throw new InvalidOperationException("Cannot query API");
-            return result.Entities;
-        }
-
 
         [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
         public async Task<HttpResponseMessage> Save([FromBody]KdModify modify)
