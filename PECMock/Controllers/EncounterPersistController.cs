@@ -128,7 +128,7 @@ namespace PECMock.Controllers
         {
             try
             {
-                var allowedEntities = new string[] { "PwEncounter", "PwEncounterAllergy", "PwEncounterCoordination", "PwEncounterEducation", "PwEncounterGoal", "PwEncounterIntervention", "PwEncounterMed", "PwEncounterMedMTP", "PwEncounterMedRec", "PwEncounterReferral", "PwEncounterSocial", "PwEncounterBiometrics", "PwEncounterNote" };
+                var allowedEntities = new string[] { "PwEncounter", "PwEncounterAllergy", "PwEncounterCoordination", "PwEncounterEducation", "PwEncounterGoal", "PwEncounterIntervention", "PwEncounterMed", "PwEncounterMedMTP", "PwEncounterMedRec", "PwEncounterReferral", "PwEncounterSocial", "PwEncounterBiometrics", "PwEncounterNote", "PwEncounterInsurance" };
                 ValidateBody(body);
 
                 string apikey = ConfigurationManager.AppSettings["ApiKey"];
@@ -138,7 +138,7 @@ namespace PECMock.Controllers
                 List<JObject> encounters = await QueryEncounter(client, PharmacyId, body.PatientId, body.EncounterId);
                 if (encounters.Count != 1) throw new InvalidOperationException("Did not find the encounter to modify. It may not exist or too many encounters may qualify for this search.");
                 var encounterStatus = (string) encounters[0]["Status"];
-                if (encounterStatus != "In Progress" && encounterStatus != "Completed") throw new InvalidOperationException("Cannot modify an encounter that is not in progress or completed");
+                if (encounterStatus != "Started" && encounterStatus != "In Progress") throw new InvalidOperationException("Cannot modify an encounter that is not started or in progress");
 
                 // prepare each object for updating
                 foreach (var modify in body.Modifies)
