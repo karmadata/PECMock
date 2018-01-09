@@ -48,6 +48,8 @@ namespace PECMock.Controllers
             try
             {
                 ValidateBody(modify);
+                if (!modify.Values.ContainsKey("PlanName")) throw new ArgumentException("PlanName is empty");
+                if (!modify.Values.ContainsKey("PlanType")) throw new ArgumentException("PlanType is empty");
                 if (modify.Operation != "Insert") throw new ArgumentException("Operation must be Insert");
 
                 modify.Values["PharmacyId"] = PharmacyId;
