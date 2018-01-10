@@ -94,6 +94,7 @@ namespace PECMock.Controllers
                 modify.Values.Remove("PwPayerPlan.BIN");
                 modify.Values.Remove("PwPayerPlan.PCN");
                 modify.Values.Remove("PwPayerPlan.GroupId");
+                modify.Values["PatientReported"] = true;
 
                 string apikey = ConfigurationManager.AppSettings["ApiKey"];
                 KdClient client = KdClient.ApiClient(apikey, apiurl);
