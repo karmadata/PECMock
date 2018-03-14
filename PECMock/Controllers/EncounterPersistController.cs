@@ -34,13 +34,6 @@ namespace PECMock.Controllers
         // api key and such
         private const string apiurl = "https://qa-api.karmadata.com/";
 
-
-
-        private static string GetApiKey()
-        {
-            return File.ReadAllText("apikey.txt").Trim();
-        }
-
         private static void ValidateBody(EncounterUpdateBody body)
         {
             if (string.IsNullOrEmpty(body.PatientId)) throw new ArgumentException("PatientId is empty");
