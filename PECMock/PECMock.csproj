@@ -222,6 +222,7 @@
     <Compile Include="Controllers\EncounterPersistController.cs" />
     <Compile Include="Controllers\GenericModifyController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\MACChallengeController.cs" />
     <Compile Include="Controllers\PatientMedicareController.cs" />
     <Compile Include="Controllers\PatientPayerController.cs" />
     <Compile Include="Controllers\PatientPreferenceController.cs" />
