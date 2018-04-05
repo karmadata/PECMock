@@ -28,7 +28,7 @@ namespace PECMock.Controllers
         private const string apiurl = "https://qa-api.karmadata.com/";
 
         // allowable lookup
-        private string[] allowedEntities = new string[] { "PwProgramEngagement" };
+        private string[] allowedEntities = new string[] { "PwProgramEngagement", "PwMedOther" };
         private string[] allowedOperations = new string[] { "Insert", "Update", "Merge", "Delete" };
 
         [System.Web.Http.AcceptVerbs(new string[] { "Post" })]
